@@ -3,8 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>IPSS Self-Assessment — by Anurag Pande</title>
-<meta name="description" content="Quick, phone-friendly IPSS self-check with instant score and email capture.">
+<meta name="description" content="Quick, mobile-friendly IPSS self-check with instant score.">
+
+<!-- Open Graph / Twitter for WhatsApp & social previews (upload og.png to repo root) -->
+<link rel="canonical" href="https://anuragpande1977.github.io/ipss-self-check/">
+<meta property="og:type" content="website" />
+<meta property="og:title" content="IPSS Self-Assessment — 2-minute check" />
+<meta property="og:description" content="Answer 7 questions and get your IPSS score instantly." />
+<meta property="og:url" content="https://anuragpande1977.github.io/ipss-self-check/" />
+<meta property="og:image" content="https://anuragpande1977.github.io/ipss-self-check/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="IPSS Self-Assessment — 2-minute check" />
+<meta name="twitter:description" content="Answer 7 questions and get your IPSS score instantly." />
+<meta name="twitter:image" content="https://anuragpande1977.github.io/ipss-self-check/og.png" />
+
 <style>
   :root { --sky:#0ea5e9; --emerald:#10b981; --amber:#f59e0b; --rose:#ef4444; --ink:#0b1322; }
   * { box-sizing:border-box; }
@@ -30,7 +46,7 @@
   .pill:has(input:checked) { border-color:var(--sky); background:#f0f9ff; }
   .row2 { display:grid; gap:12px; grid-template-columns:1fr; }
   @media (min-width:640px){ .row2 { grid-template-columns:1fr 1fr; } }
-  input[type="text"], input[type="email"], input[type="number"] {
+  input[type="text"], input[type="email"], input[type="tel"], input[type="number"] {
     width:100%; height:42px; border:1px solid #cbd5e1; border-radius:10px; padding:0 12px; outline:none;
   }
   input:focus { border-color:var(--sky); box-shadow:0 0 0 3px rgba(14,165,233,.2); }
@@ -69,8 +85,14 @@
         <div class="muted">by Anurag Pande</div>
       </div>
     </div>
+
+    <!-- Video (auto: /Linkedpost.mp4; override via ?video=...) -->
+    <div id="videoWrap" class="card" style="display:none;">
+      <div class="card-b" style="padding:0;"></div>
+    </div>
+
     <p class="muted" style="max-width:740px;margin:6px 0 16px;">
-      Over the <strong>past month</strong>, choose the option that best describes your urinary symptoms. Results are informational only and not a diagnosis.
+      Over the <strong>past month</strong>, choose the option that best describes your urinary symptoms.
     </p>
 
     <div class="layout">
@@ -85,18 +107,20 @@
                 <input id="name" name="name" placeholder="Your full name" required>
               </div>
               <div>
-                <label for="email">Email <span style="color:#ef4444">*</span></label>
-                <input id="email" name="email" type="email" placeholder="you@example.com" required>
-                <div class="muted">Email is required to receive your results/education.</div>
+                <label for="email">Email (optional)</label>
+                <input id="email" name="email" type="email" placeholder="you@example.com">
               </div>
+            </div>
+
+            <div>
+              <label for="phone">Phone (optional)</label>
+              <input id="phone" name="phone" inputmode="tel" pattern="[0-9()+\-.\s]{7,}" placeholder="+1 555 123 4567">
             </div>
 
             <!-- Q1 -->
             <fieldset class="q">
               <legend>1) Over the past month, how often have you had the <strong>sensation of not emptying your bladder completely</strong> after you finished urinating?</legend>
-              <div class="optrow" data-q="q1">
-                <!-- value 0–5 maps to IPSS scoring -->
-              </div>
+              <div class="optrow" data-q="q1"></div>
             </fieldset>
 
             <!-- Q2 -->
@@ -145,12 +169,12 @@
 
             <label style="display:flex; gap:10px; align-items:flex-start;">
               <input type="checkbox" id="consent" required>
-              <span class="muted">I consent to share these responses for research and product improvement. I understand this is not medical advice.</span>
+              <span class="muted">I consent to share these responses for research and product improvement.</span>
             </label>
 
             <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
               <button id="submitBtn" type="submit" disabled>Submit assessment</button>
-              <div class="muted" id="hint">Enter name & valid email, answer all items, and consent.</div>
+              <div class="muted" id="hint">Enter name, email <em>or</em> phone, answer all items, and consent.</div>
             </div>
 
             <div id="serverMsg" class="msg ok" style="display:none;">✓ Thanks! Your IPSS total is <strong id="serverTotal"></strong>.</div>
@@ -189,7 +213,6 @@
               <li>Moderate (8–19): consider discussing options with a healthcare professional.</li>
               <li>Severe (20–35): seek medical advice to evaluate therapies.</li>
             </ul>
-            <p style="font-size:12px;margin-top:6px;">This tool is informational and not a substitute for medical care.</p>
           </div>
         </div>
       </div>
@@ -204,7 +227,7 @@
   </div>
 
 <script>
-  // === PASTE YOUR APPS SCRIPT WEB APP URL HERE ===
+  // === YOUR APPS SCRIPT WEB APP URL ===
   const ENDPOINT = 'https://script.google.com/macros/s/AKfycbyCfbAB4fK-t1rFgCeMyaPNvIyus289jBwGdl6mz-UOya3JN25VfhkWjqUegyCRqvWR/exec';
 
   // Build option pills per IPSS standard
@@ -235,7 +258,6 @@
       container.appendChild(label);
     });
   }
-
   document.querySelectorAll('.optrow').forEach(row=>{
     const key = row.getAttribute('data-q');
     if (row.hasAttribute('data-nocturia')) makePills(row, key, nocturiaOpts);
@@ -288,27 +310,68 @@
   }
   form.addEventListener('input', () => { updateGauge(); validateForm(); });
 
+  // Validation: email OR phone
   function validateForm(){
-    const nameOK = (document.getElementById('name').value.trim().length >= 2);
-    const emailV = document.getElementById('email').value.trim();
-    const emailOK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailV);
-    const allQs = totalScore() !== null; // all 7 answered
+    const nameOK  = (document.getElementById('name').value.trim().length >= 2);
+
+    const emailV  = document.getElementById('email').value.trim();
+    const emailOK = emailV === '' ? false : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailV);
+
+    const phoneV  = document.getElementById('phone').value.trim();
+    const phoneOK = phoneV === '' ? false : /^[0-9()+\-.\s]{7,}$/.test(phoneV);
+
+    const hasContact = emailOK || phoneOK;
+    const allQs = totalScore() !== null;
     const consent = document.getElementById('consent').checked;
-    const ok = nameOK && emailOK && allQs && consent;
+
+    const ok = nameOK && hasContact && allQs && consent;
     submitBtn.disabled = !ok;
     hint.style.display = ok ? 'none' : 'block';
   }
 
-  // UTM capture
+  // UTM + video capture (default to /Linkedpost.mp4)
   const usp = new URLSearchParams(location.search);
+  const basePath = location.pathname.endsWith('/') ? location.pathname : location.pathname.replace(/[^/]+$/, '');
+  const defaultVideoUrl = location.origin + basePath + 'Linkedpost.mp4';
+  const videoParam = usp.get('video') || ('mp4:' + encodeURIComponent(defaultVideoUrl));
   const utm = {
     utm_source: usp.get('utm_source') || '',
     utm_medium: usp.get('utm_medium') || '',
     utm_campaign: usp.get('utm_campaign') || '',
     utm_term: usp.get('utm_term') || '',
     utm_content: usp.get('utm_content') || '',
-    page_url: location.href
+    page_url: location.href,
+    video: videoParam
   };
+
+  // Embed video
+  (function embedVideo(param){
+    if (!param) return;
+    const wrap = document.getElementById('videoWrap');
+    const body = wrap.querySelector('.card-b');
+    let html = '';
+    if (param.startsWith('youtube:')) {
+      const id = param.split(':')[1];
+      html = `<div style="position:relative;padding-top:56.25%;">
+                <iframe src="https://www.youtube.com/embed/${id}?rel=0&modestbranding=1"
+                        title="Video" allow="autoplay; encrypted-media; picture-in-picture"
+                        allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:12px;"></iframe>
+              </div>`;
+    } else if (param.startsWith('vimeo:')) {
+      const id = param.split(':')[1];
+      html = `<div style="position:relative;padding-top:56.25%;">
+                <iframe src="https://player.vimeo.com/video/${id}"
+                        title="Video" allow="autoplay; encrypted-media; picture-in-picture"
+                        allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:12px;"></iframe>
+              </div>`;
+    } else if (param.startsWith('mp4:')) {
+      const url = decodeURIComponent(param.split(':')[1]);
+      html = `<video controls playsinline style="width:100%;border-radius:12px;">
+                <source src="${url}" type="video/mp4">
+              </video>`;
+    }
+    if (html) { body.innerHTML = html; wrap.style.display = 'block'; }
+  })(videoParam);
 
   // Submit
   form.addEventListener('submit', async (e) => {
@@ -319,6 +382,7 @@
     const fd = new FormData();
     fd.append('name', document.getElementById('name').value.trim());
     fd.append('email', document.getElementById('email').value.trim());
+    fd.append('phone', document.getElementById('phone').value.trim());
     ['q1','q2','q3','q4','q5','q6','q7'].forEach(k=>{
       const v = form.querySelector(`input[name="${k}"]:checked`).value;
       fd.append(k, v);
@@ -329,6 +393,11 @@
 
     try {
       const res = await fetch(ENDPOINT, { method:'POST', body:fd });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        const txt = await res.text();
+        throw new Error(`Non-JSON response (${res.status}): ${txt.slice(0,160)}`);
+      }
       const out = await res.json();
       if (out.ok) {
         serverTotal.textContent = out.total;
@@ -338,11 +407,10 @@
         finalBadge.textContent = lab; finalBadge.className = 'badge ' + cls;
         insights.style.display='block';
       } else {
-        serverErrText.textContent = out.error || 'Submission failed.';
-        serverErr.style.display='flex';
+        throw new Error(out.error || 'Submission failed.');
       }
     } catch (err) {
-      serverErrText.textContent = 'Network error. Check your Apps Script Web App URL & access.';
+      serverErrText.textContent = String(err.message || err);
       serverErr.style.display='flex';
     } finally {
       submitBtn.textContent = prev; validateForm();
@@ -350,7 +418,7 @@
   });
 
   // init
-  updateGauge(); validateForm();
+  document.addEventListener('DOMContentLoaded', () => { updateGauge(); validateForm(); });
 </script>
 </body>
 </html>
